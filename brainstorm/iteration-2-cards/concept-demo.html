@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Concept Demo — Flight Through Nebulae</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: auto; }
+  body {
+    background: #000;
+    color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Long scroll container */
+  #scroll-spacer {
+    height: 800vh; /* lots of scroll room */
+    position: relative;
+  }
+
+  /* Fixed 3D viewport */
+  #viewport {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+  }
+
+  /* UI overlay */
+  #ui {
+    position: fixed;
+    z-index: 10;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  /* Zone indicator */
+  #zone-label {
+    position: absolute;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    transition: color 0.8s, opacity 0.8s;
+    font-family: monospace;
+  }
+
+  /* Depth indicator */
+  #depth-bar {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .depth-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.15);
+    transition: all 0.5s;
+  }
+  .depth-dot.active {
+    background: #58a6ff;
+    border-color: #58a6ff;
+    box-shadow: 0 0 8px rgba(88,166,255,0.5);
+  }
+  .depth-dot-line {
+    width: 1px; height: 20px;
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* Star info popup */
+  #star-info {
+    position: absolute;
+    pointer-events: auto;
+    background: rgba(5,8,16,0.85);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-radius: 10px;
+    padding: 16px 20px;
+    max-width: 260px;
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: none;
+  }
+  #star-info.visible { opacity: 1; display: block; }
+  #star-info .cat {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  #star-info .title {
+    font-size: 18px;
+    font-weight: 400;
+    color: #e6edf3;
+  }
+  #star-info .date {
+    font-size: 10px;
+    font-family: monospace;
+    color: rgba(255,255,255,0.25);
+    margin-top: 2px;
+  }
+  #star-info .desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  /* Scroll hint */
+  #scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: bob 2.5s ease-in-out infinite;
+    transition: opacity 0.5s;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(8px); }
+  }
+
+  /* Center name */
+  #hero-name {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    transition: opacity 0.8s;
+  }
+  #hero-name h1 {
+    font-size: 64px;
+    font-weight: 200;
+    letter-spacing: -2px;
+    color: #e6edf3;
+  }
+  #hero-name h1 em {
+    font-style: italic;
+    color: #58a6ff;
+  }
+  #hero-name p {
+    font-size: 12px;
+    font-family: monospace;
+    color: rgba(255,255,255,0.2);
+    margin-top: 12px;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport"></div>
+
+<div id="ui">
+  <div id="zone-label">Open space</div>
+
+  <div id="hero-name">
+    <h1>Matvei <em>Tkhai</em></h1>
+    <p>scroll to fly through my universe</p>
+  </div>
+
+  <div id="depth-bar">
+    <div class="depth-dot active" data-zone="0"></div>
+    <div class="depth-dot-line"></div>
+    <div class="depth-dot" data-zone="1"></div>
+    <div class="depth-dot-line"></div>
+    <div class="depth-dot" data-zone="2"></div>
+    <div class="depth-dot-line"></div>
+    <div class="depth-dot" data-zone="3"></div>
+  </div>
+
+  <div id="star-info">
+    <div class="cat" id="info-cat">● education</div>
+    <div class="title" id="info-title">HSE University</div>
+    <div class="date" id="info-date">2022 – 2026</div>
+    <div class="desc" id="info-desc">Факультет экономических наук. Исследования в области венчурного капитала.</div>
+  </div>
+
+  <div id="scroll-hint">↓ scroll to explore</div>
+</div>
+
+<div id="scroll-spacer"></div>
+
+<script>
+// ============ THREE.JS SETUP ============
+const container = document.getElementById('viewport');
+const W = window.innerWidth;
+const H = window.innerHeight;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, W / H, 1, 12000);
+camera.position.set(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(W, H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x030508);
+container.appendChild(renderer.domElement);
+
+// ============ STAR FIELD ============
+function createStarField(count, spread, zStart, zEnd) {
+  const geom = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const colorOpts = [
+    [1, 1, 1], [0.78, 0.84, 0.9], [1, 0.92, 0.65],
+    [0.45, 0.72, 1], [0.87, 0.88, 0.9], [1, 0.47, 0.46]
+  ];
+  for (let i = 0; i < count; i++) {
+    pos[i*3] = (Math.random() - 0.5) * spread;
+    pos[i*3+1] = (Math.random() - 0.5) * spread;
+    pos[i*3+2] = zStart - Math.random() * (zStart - zEnd);
+    const c = colorOpts[Math.floor(Math.random() * colorOpts.length)];
+    colors[i*3] = c[0]; colors[i*3+1] = c[1]; colors[i*3+2] = c[2];
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const mat = new THREE.PointsMaterial({
+    size: 2.5, vertexColors: true, transparent: true,
+    opacity: 0.7, sizeAttenuation: true
+  });
+  return new THREE.Points(geom, mat);
+}
+
+const bgStars = createStarField(4000, 5000, 500, -10000);
+scene.add(bgStars);
+
+// ============ NEBULA CREATION ============
+function makeNebulaTexture(r, g, b) {
+  const size = 512;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Multiple layered gradients for organic look
+  for (let i = 0; i < 6; i++) {
+    const cx = size/2 + (Math.random()-0.5) * size * 0.3;
+    const cy = size/2 + (Math.random()-0.5) * size * 0.3;
+    const rad = size * (0.2 + Math.random() * 0.3);
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    const alpha = 0.04 + Math.random() * 0.08;
+    grad.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
+    grad.addColorStop(0.5, `rgba(${r},${g},${b},${alpha * 0.4})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+  }
+  return new THREE.CanvasTexture(c);
+}
+
+function createNebula(x, y, z, r, g, b, scale) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+
+  // Multiple sprites for volume
+  for (let i = 0; i < 5; i++) {
+    const tex = makeNebulaTexture(r, g, b);
+    const mat = new THREE.SpriteMaterial({
+      map: tex, transparent: true, opacity: 0.8,
+      blending: THREE.AdditiveBlending
+    });
+    const sprite = new THREE.Sprite(mat);
+    sprite.position.set(
+      (Math.random()-0.5) * scale * 0.4,
+      (Math.random()-0.5) * scale * 0.3,
+      (Math.random()-0.5) * scale * 0.3
+    );
+    sprite.scale.set(scale * (0.6 + Math.random()*0.8), scale * (0.5 + Math.random()*0.7), 1);
+    group.add(sprite);
+  }
+
+  // Stars inside the nebula
+  const innerStars = createStarField(200, scale * 0.8, z + scale*0.3, z - scale*0.3);
+  innerStars.position.set(x, y, 0);
+  scene.add(innerStars);
+
+  scene.add(group);
+  return group;
+}
+
+// ============ ZONES (NEBULAE) ============
+const zones = [
+  { z: -2000, name: 'Education', color: [180, 120, 220], r: 180, g: 120, b: 220, scale: 1200,
+    stars: [
+      { label: 'HSE University', cat: 'education', date: '2022–2026', desc: 'Факультет экономических наук. Исследования в области венчурного капитала.', offset: [-200, 80] },
+      { label: 'School 21', cat: 'tech', date: '2023–2024', desc: 'Программирование, Ecole 42. Алгоритмы, C, системное программирование.', offset: [180, -60] },
+    ]
+  },
+  { z: -5000, name: 'Research', color: [60, 140, 230], r: 60, g: 140, b: 230, scale: 1000,
+    stars: [
+      { label: 'ISSEK ВШЭ', cat: 'research', date: '2024–now', desc: 'Исследования российского венчурного рынка, аналитика.', offset: [-150, 100] },
+      { label: 'VC Analysis', cat: 'research', date: '2025', desc: 'Анализ трендов и возможностей венчурного рынка.', offset: [160, -40] },
+    ]
+  },
+  { z: -8000, name: 'Projects', color: [220, 120, 80], r: 220, g: 120, b: 80, scale: 1100,
+    stars: [
+      { label: 'Venture Building', cat: 'projects', date: '2025–now', desc: 'Создание и развитие стартап-проектов.', offset: [-180, 50] },
+      { label: 'This Website', cat: 'projects', date: '2026', desc: 'Интерактивный космос — сам видишь :)', offset: [140, -80] },
+    ]
+  },
+];
+
+// Create nebulae and interactive stars
+const interactiveStars = [];
+const catColors = {
+  education: '#a78bfa', tech: '#60a5fa', research: '#38bdf8', projects: '#fb923c'
+};
+
+zones.forEach((zone, zi) => {
+  createNebula(0, 0, zone.z, zone.r, zone.g, zone.b, zone.scale);
+
+  zone.stars.forEach(star => {
+    const geom = new THREE.SphereGeometry(12, 16, 16);
+    const mat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(catColors[star.cat] || '#ffffff'),
+      transparent: true, opacity: 0.9
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.position.set(star.offset[0], star.offset[1], zone.z);
+    mesh.userData = { ...star, zoneIndex: zi };
+    scene.add(mesh);
+    interactiveStars.push(mesh);
+
+    // Glow
+    const glowGeom = new THREE.SphereGeometry(30, 16, 16);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(catColors[star.cat] || '#ffffff'),
+      transparent: true, opacity: 0.1
+    });
+    const glow = new THREE.Mesh(glowGeom, glowMat);
+    glow.position.copy(mesh.position);
+    scene.add(glow);
+  });
+});
+
+// ============ SCROLL → CAMERA ============
+const TOTAL_DEPTH = 10000;
+let scrollProgress = 0;
+let cameraZ = 0;
+let cameraTargetZ = 0;
+
+window.addEventListener('scroll', () => {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  scrollProgress = window.scrollY / maxScroll;
+  cameraTargetZ = -scrollProgress * TOTAL_DEPTH;
+});
+
+// ============ MOUSE → CAMERA OFFSET ============
+let mouseX = 0, mouseY = 0;
+window.addEventListener('mousemove', (e) => {
+  mouseX = (e.clientX / W - 0.5) * 2;
+  mouseY = (e.clientY / H - 0.5) * 2;
+});
+
+// ============ CLICK → STAR INFO ============
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const infoEl = document.getElementById('star-info');
+
+renderer.domElement.addEventListener('click', (e) => {
+  mouse.x = (e.clientX / W) * 2 - 1;
+  mouse.y = -(e.clientY / H) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(interactiveStars);
+  if (hits.length > 0) {
+    const data = hits[0].object.userData;
+    document.getElementById('info-cat').textContent = '● ' + data.cat;
+    document.getElementById('info-cat').style.color = catColors[data.cat];
+    document.getElementById('info-title').textContent = data.label;
+    document.getElementById('info-date').textContent = data.date;
+    document.getElementById('info-desc').textContent = data.desc;
+
+    // Position near click
+    const ix = Math.min(e.clientX + 20, W - 280);
+    const iy = Math.min(e.clientY - 30, H - 200);
+    infoEl.style.left = ix + 'px';
+    infoEl.style.top = Math.max(10, iy) + 'px';
+    infoEl.classList.add('visible');
+  } else {
+    infoEl.classList.remove('visible');
+  }
+});
+
+// ============ UI UPDATES ============
+const zoneLabelEl = document.getElementById('zone-label');
+const heroNameEl = document.getElementById('hero-name');
+const scrollHintEl = document.getElementById('scroll-hint');
+const depthDots = document.querySelectorAll('.depth-dot');
+
+function updateUI() {
+  // Hero fade
+  const heroOpacity = Math.max(0, 1 - scrollProgress * 8);
+  heroNameEl.style.opacity = heroOpacity;
+  scrollHintEl.style.opacity = heroOpacity;
+
+  // Zone detection
+  let currentZone = -1;
+  const camZ = camera.position.z;
+  zones.forEach((zone, i) => {
+    const dist = Math.abs(camZ - zone.z);
+    if (dist < zone.scale * 0.5) currentZone = i;
+  });
+
+  if (currentZone >= 0) {
+    const z = zones[currentZone];
+    zoneLabelEl.textContent = `✦ ${z.name}`;
+    zoneLabelEl.style.color = `rgb(${z.r},${z.g},${z.b})`;
+  } else {
+    zoneLabelEl.textContent = scrollProgress < 0.05 ? 'Venture Universe' : '· · · transit · · ·';
+    zoneLabelEl.style.color = 'rgba(255,255,255,0.2)';
+  }
+
+  // Depth dots
+  depthDots.forEach((dot, i) => {
+    if (i === 0) dot.classList.toggle('active', currentZone === -1 && scrollProgress < 0.1);
+    else dot.classList.toggle('active', currentZone === i - 1);
+  });
+}
+
+// ============ RENDER LOOP ============
+let rotationAngle = 0;
+
+function animate() {
+  // Smooth camera movement
+  cameraZ += (cameraTargetZ - cameraZ) * 0.08;
+  camera.position.z = cameraZ;
+
+  // Mouse parallax
+  camera.position.x += (mouseX * 100 - camera.position.x) * 0.03;
+  camera.position.y += (-mouseY * 60 - camera.position.y) * 0.03;
+
+  // Slight rotation during flight
+  rotationAngle += 0.0003;
+  camera.rotation.z = Math.sin(rotationAngle) * 0.02 + mouseX * 0.02;
+
+  camera.lookAt(camera.position.x * 0.3, camera.position.y * 0.3, cameraZ - 500);
+
+  updateUI();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+
+// Resize
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+</script>
+
+</body>
+</html>

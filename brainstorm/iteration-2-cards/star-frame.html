@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Star Text Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=Space+Mono:wght@400&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #030508; color: #fff; font-family: system-ui; }
+
+  .demos {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.15);
+    padding: 20px 0 6px;
+  }
+
+  .demo {
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+  .demo:hover { border-color: rgba(255,255,255,0.12); }
+  .demo.selected {
+    border-color: rgba(255,255,255,0.4);
+    box-shadow: 0 0 40px rgba(255,255,255,0.03);
+  }
+
+  .preview {
+    min-height: 320px;
+    padding: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .preview::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.25), transparent),
+      radial-gradient(1px 1px at 22% 68%, rgba(255,255,255,0.15), transparent),
+      radial-gradient(1px 1px at 35% 28%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1.5px 1.5px at 52% 82%, rgba(255,234,167,0.18), transparent),
+      radial-gradient(1px 1px at 68% 15%, rgba(255,255,255,0.16), transparent),
+      radial-gradient(1px 1px at 78% 52%, rgba(255,255,255,0.12), transparent),
+      radial-gradient(1.5px 1.5px at 88% 38%, rgba(116,185,255,0.15), transparent),
+      radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.12), transparent),
+      radial-gradient(1px 1px at 42% 45%, rgba(255,255,255,0.1), transparent),
+      radial-gradient(1px 1px at 62% 72%, rgba(255,255,255,0.14), transparent),
+      radial-gradient(1px 1px at 95% 88%, rgba(255,255,255,0.1), transparent),
+      radial-gradient(1px 1px at 5% 50%, rgba(255,255,255,0.18), transparent),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.15), transparent),
+      radial-gradient(1px 1px at 80% 90%, rgba(255,255,255,0.12), transparent);
+    pointer-events: none;
+  }
+
+  /* Star glow */
+  .star {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 6px 2px rgba(255,255,255,0.6), 0 0 20px 4px rgba(255,255,255,0.15);
+    flex-shrink: 0;
+  }
+
+  /* Connector line */
+  .connector {
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.06));
+    flex-shrink: 0;
+  }
+
+  .info {
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.03);
+  }
+  .info .name { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .info .note { font-size: 10px; color: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<div class="demos">
+
+  <div class="label">Текст рядом со звездой. Как оформить?</div>
+
+  <!-- 1: Minimal — just line and text, no frame -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 30% 50%, #080b18 0%, #030508 100%);">
+      <div style="position:relative;display:flex;align-items:center;gap:0;">
+        <div class="star"></div>
+        <div class="connector"></div>
+        <div style="padding-left:8px;">
+          <div style="font-family:'Saira';font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.9);">
+            HSE University
+          </div>
+          <div style="font-family:'Saira';font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5;">
+            Economics · Class of 2026<br>
+            GPA 8.9 / 10
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">A: Minimal — линия + текст</div>
+      <div class="note">ничего лишнего. звезда → линия → текст</div>
+    </div>
+  </div>
+
+  <!-- 2: HUD corners — thin corner brackets -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 35% 45%, #080b18 0%, #030508 100%);">
+      <div style="position:relative;display:flex;align-items:center;gap:0;">
+        <div class="star"></div>
+        <div class="connector"></div>
+        <div style="position:relative;padding:16px 20px;margin-left:8px;">
+          <!-- HUD corners -->
+          <div style="position:absolute;top:0;left:0;width:16px;height:16px;border-top:1px solid rgba(255,255,255,0.2);border-left:1px solid rgba(255,255,255,0.2);"></div>
+          <div style="position:absolute;top:0;right:0;width:16px;height:16px;border-top:1px solid rgba(255,255,255,0.2);border-right:1px solid rgba(255,255,255,0.2);"></div>
+          <div style="position:absolute;bottom:0;left:0;width:16px;height:16px;border-bottom:1px solid rgba(255,255,255,0.2);border-left:1px solid rgba(255,255,255,0.2);"></div>
+          <div style="position:absolute;bottom:0;right:0;width:16px;height:16px;border-bottom:1px solid rgba(255,255,255,0.2);border-right:1px solid rgba(255,255,255,0.2);"></div>
+          <div style="font-family:'Saira';font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.9);">
+            HSE University
+          </div>
+          <div style="font-family:'Saira';font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5;">
+            Economics · Class of 2026<br>
+            GPA 8.9 / 10
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">B: HUD corners — угловые скобки</div>
+      <div class="note">тонкие уголки как прицел / бортовой компьютер</div>
+    </div>
+  </div>
+
+  <!-- 3: Subtle border — thin full border with slight bg -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 40% 50%, #080b18 0%, #030508 100%);">
+      <div style="position:relative;display:flex;align-items:center;gap:0;">
+        <div class="star"></div>
+        <div class="connector"></div>
+        <div style="padding:14px 18px;margin-left:8px;border:1px solid rgba(255,255,255,0.08);border-radius:4px;background:rgba(255,255,255,0.02);backdrop-filter:blur(8px);">
+          <div style="font-family:'Saira';font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.9);">
+            HSE University
+          </div>
+          <div style="font-family:'Saira';font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5;">
+            Economics · Class of 2026<br>
+            GPA 8.9 / 10
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">C: Glass card — тонкая рамка + blur</div>
+      <div class="note">стекло, размытый фон. аккуратно, современно</div>
+    </div>
+  </div>
+
+  <!-- 4: Left accent line — vertical bar -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 35% 50%, #080b18 0%, #030508 100%);">
+      <div style="position:relative;display:flex;align-items:center;gap:0;">
+        <div class="star"></div>
+        <div class="connector"></div>
+        <div style="padding:12px 0 12px 16px;margin-left:8px;border-left:2px solid rgba(255,255,255,0.15);">
+          <div style="font-family:'Saira';font-size:14px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.9);">
+            HSE University
+          </div>
+          <div style="font-family:'Saira';font-size:11px;font-weight:400;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5;">
+            Economics · Class of 2026<br>
+            GPA 8.9 / 10
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">D: Left accent — вертикальная черта</div>
+      <div class="note">линия слева как акцент. строго, по-деловому</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

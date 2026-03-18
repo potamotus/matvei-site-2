@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clean Typography</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Outfit:wght@200;300;400;600&family=Inter:wght@200;300;400;600&family=Sora:wght@200;300;400;600;700&family=General+Sans:wght@200;300;400;600&family=Manrope:wght@200;300;400;600;700&family=JetBrains+Mono:wght@300;400&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #030508; color: #fff; font-family: system-ui; }
+
+  .demos {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.15);
+    padding: 20px 0 6px;
+  }
+
+  .demo {
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.3s;
+  }
+  .demo:hover { border-color: rgba(255,255,255,0.12); }
+  .demo.selected {
+    border-color: rgba(255,255,255,0.4);
+    box-shadow: 0 0 40px rgba(255,255,255,0.03);
+  }
+
+  .preview {
+    min-height: 260px;
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Realistic star background */
+  .preview::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 22% 68%, rgba(255,255,255,0.12), transparent),
+      radial-gradient(1px 1px at 35% 28%, rgba(255,255,255,0.18), transparent),
+      radial-gradient(1.5px 1.5px at 52% 82%, rgba(255,234,167,0.15), transparent),
+      radial-gradient(1px 1px at 68% 15%, rgba(255,255,255,0.14), transparent),
+      radial-gradient(1px 1px at 78% 52%, rgba(255,255,255,0.1), transparent),
+      radial-gradient(1.5px 1.5px at 88% 38%, rgba(116,185,255,0.12), transparent),
+      radial-gradient(1px 1px at 15% 90%, rgba(255,255,255,0.1), transparent),
+      radial-gradient(1px 1px at 42% 45%, rgba(255,255,255,0.08), transparent),
+      radial-gradient(1px 1px at 62% 72%, rgba(255,255,255,0.12), transparent),
+      radial-gradient(1px 1px at 95% 88%, rgba(255,255,255,0.08), transparent),
+      radial-gradient(2px 2px at 30% 50%, rgba(255,255,255,0.12), transparent);
+    pointer-events: none;
+  }
+
+  /* Nebula hint */
+  .preview .nebula {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(50px);
+    pointer-events: none;
+  }
+
+  .info {
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.03);
+  }
+  .info .name { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .info .note { font-size: 10px; color: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<div class="demos">
+
+  <div class="label">Сила в контрасте: чистый текст на живом космосе</div>
+
+  <!-- 1: Space Grotesk — thin/bold contrast -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 30% 40%, #0a0d18 0%, #030508 100%);">
+      <div class="nebula" style="top:20%;right:10%;width:250px;height:180px;background:radial-gradient(ellipse, rgba(100,80,180,0.04), transparent 70%);"></div>
+      <div style="position:relative;">
+        <div style="font-family:'Space Grotesk';font-size:11px;font-weight:400;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-bottom:20px;">
+          Venture Universe
+        </div>
+        <div style="font-family:'Space Grotesk';font-size:64px;font-weight:300;line-height:0.9;letter-spacing:-2px;color:rgba(255,255,255,0.95);">
+          Matvei
+        </div>
+        <div style="font-family:'Space Grotesk';font-size:64px;font-weight:700;line-height:0.9;letter-spacing:-2px;color:#fff;">
+          Tkhai
+        </div>
+        <div style="font-family:'JetBrains Mono';font-size:11px;font-weight:300;color:rgba(255,255,255,0.18);margin-top:16px;letter-spacing:1px;">
+          vc researcher · venture builder · hse '26
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">Space Grotesk 300/700 + JetBrains Mono</div>
+      <div class="note">тонкий → жирный контраст</div>
+    </div>
+  </div>
+
+  <!-- 2: Sora — ultralight + heavy -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 60% 50%, #080b15 0%, #030508 100%);">
+      <div class="nebula" style="top:30%;left:55%;width:200px;height:200px;background:radial-gradient(ellipse, rgba(60,120,200,0.035), transparent 70%);"></div>
+      <div style="position:relative;">
+        <div style="font-family:'Sora';font-size:10px;font-weight:300;letter-spacing:5px;text-transform:uppercase;color:rgba(255,255,255,0.15);margin-bottom:24px;">
+          scroll to explore the universe
+        </div>
+        <div style="font-family:'Sora';font-size:72px;font-weight:200;line-height:0.85;letter-spacing:-3px;color:rgba(255,255,255,0.88);">
+          Matvei
+        </div>
+        <div style="font-family:'Sora';font-size:72px;font-weight:700;line-height:0.85;letter-spacing:-3px;color:#fff;">
+          Tkhai<span style="color:rgba(255,255,255,0.15);">.</span>
+        </div>
+        <div style="font-family:'IBM Plex Mono';font-size:11px;font-weight:300;color:rgba(255,255,255,0.15);margin-top:20px;">
+          vc research / venture building / hse university
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">Sora 200/700 + IBM Plex Mono</div>
+      <div class="note">невесомый + тяжёлый. точка как акцент</div>
+    </div>
+  </div>
+
+  <!-- 3: Outfit — geometric, center -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 50% 50%, #0a0810 0%, #030508 100%);text-align:center;align-items:center;">
+      <div class="nebula" style="top:15%;left:30%;width:300px;height:160px;background:radial-gradient(ellipse, rgba(140,80,160,0.03), transparent 70%);"></div>
+      <div style="position:relative;">
+        <div style="font-family:'Outfit';font-size:80px;font-weight:200;line-height:0.85;letter-spacing:-3px;color:rgba(255,255,255,0.9);">
+          Matvei<br>Tkhai
+        </div>
+        <div style="width:40px;height:1px;background:rgba(255,255,255,0.1);margin:20px auto 16px;"></div>
+        <div style="font-family:'JetBrains Mono';font-size:10px;font-weight:300;color:rgba(255,255,255,0.15);letter-spacing:2px;text-transform:uppercase;">
+          vc researcher · hse '26
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">Outfit 200 + JetBrains Mono</div>
+      <div class="note">ультра-тонкий, центр, линия-разделитель</div>
+    </div>
+  </div>
+
+  <!-- 4: Manrope — asymmetric layout -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:radial-gradient(ellipse at 20% 60%, #080b12 0%, #030508 100%);">
+      <div class="nebula" style="bottom:10%;left:5%;width:200px;height:200px;background:radial-gradient(ellipse, rgba(200,120,80,0.03), transparent 70%);"></div>
+      <div style="position:relative;">
+        <div style="font-family:'Space Mono';font-size:9px;font-weight:400;color:rgba(255,255,255,0.12);letter-spacing:2px;margin-bottom:16px;">
+          55.7°N 37.6°E — MOSCOW
+        </div>
+        <div style="font-family:'Manrope';font-size:56px;font-weight:200;line-height:1;letter-spacing:-2px;color:rgba(255,255,255,0.85);">
+          Matvei
+        </div>
+        <div style="font-family:'Manrope';font-size:56px;font-weight:700;line-height:1;letter-spacing:-2px;color:#fff;margin-left:80px;">
+          Tkhai
+        </div>
+        <div style="display:flex;gap:24px;margin-top:24px;font-family:'Space Mono';font-size:9px;color:rgba(255,255,255,0.1);letter-spacing:1px;">
+          <span>Education</span><span>Research</span><span>Projects</span><span>Contact</span>
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">Manrope 200/700 + Space Mono</div>
+      <div class="note">сдвиг фамилии вправо, координаты</div>
+    </div>
+  </div>
+
+  <!-- 5: Space Grotesk — vertical -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:#030508;padding:48px 48px 48px 80px;">
+      <div class="nebula" style="top:0;right:0;width:300px;height:300px;background:radial-gradient(ellipse, rgba(60,100,180,0.025), transparent 70%);"></div>
+      <div style="position:relative;display:flex;align-items:flex-end;gap:32px;">
+        <div>
+          <div style="font-family:'Space Grotesk';font-size:10px;font-weight:400;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,0.12);margin-bottom:12px;">Portfolio</div>
+          <div style="font-family:'Space Grotesk';font-size:68px;font-weight:300;line-height:0.85;letter-spacing:-2px;color:rgba(255,255,255,0.9);">
+            Matvei
+          </div>
+          <div style="font-family:'Space Grotesk';font-size:68px;font-weight:700;line-height:0.85;letter-spacing:-2px;color:#fff;">
+            Tkhai
+          </div>
+        </div>
+        <div style="font-family:'JetBrains Mono';font-size:10px;font-weight:300;color:rgba(255,255,255,0.1);line-height:2;padding-bottom:8px;">
+          VC Research<br>Venture Building<br>HSE University<br>Moscow, 2026
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">Space Grotesk 300/700 + JetBrains Mono</div>
+      <div class="note">имя слева, факты справа в столбик</div>
+    </div>
+  </div>
+
+  <!-- 6: Inter — maximum minimal -->
+  <div class="demo" onclick="this.classList.toggle('selected')">
+    <div class="preview" style="background:#030508;align-items:center;text-align:center;">
+      <div class="nebula" style="top:30%;left:35%;width:250px;height:200px;background:radial-gradient(ellipse, rgba(255,255,255,0.01), transparent 70%);"></div>
+      <div style="position:relative;">
+        <div style="font-family:'Inter';font-size:84px;font-weight:200;line-height:0.9;letter-spacing:-4px;color:rgba(255,255,255,0.92);">
+          MT
+        </div>
+        <div style="font-family:'Inter';font-size:14px;font-weight:300;letter-spacing:8px;text-transform:uppercase;color:rgba(255,255,255,0.2);margin-top:16px;">
+          Matvei Tkhai
+        </div>
+        <div style="font-family:'IBM Plex Mono';font-size:10px;font-weight:300;color:rgba(255,255,255,0.08);margin-top:12px;letter-spacing:1px;">
+          venture capital · research · building
+        </div>
+      </div>
+    </div>
+    <div class="info">
+      <div class="name">Inter 200 + IBM Plex Mono</div>
+      <div class="note">инициалы крупно, имя мелко. максимум минимализма</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
