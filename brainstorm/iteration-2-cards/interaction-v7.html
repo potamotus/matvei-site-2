@@ -38,15 +38,24 @@
   .star-point:hover .dot { transform: scale(1.3); box-shadow: 0 0 10px 4px rgba(255,255,255,0.6), 0 0 25px 8px rgba(255,255,255,0.2); }
   @keyframes pulse-out { 0% { width:24px;height:24px;opacity:0.6; } 100% { width:48px;height:48px;opacity:0; } }
 
-  .star-label { position: fixed; font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1px; color:rgba(255,255,255,0.08); text-transform:uppercase; pointer-events:none; z-index:5; }
-  .star-label .label-name { color:rgba(255,255,255,0.15); font-family:'Saira'; font-size:9px; font-weight:500; letter-spacing:0.5px; }
+  .star-label { position: fixed; font-family:'IBM Plex Mono',monospace; font-size:8px; letter-spacing:1px; color:rgba(255,255,255,0.08); text-transform:uppercase; pointer-events:none; z-index:5; transition: opacity 0.15s; }
+  .star-label .label-name { color:rgba(255,255,255,0.15); font-family:'Saira'; font-size:9px; font-weight:500; letter-spacing:0.5px; transition: color 0.3s; }
+  .star-label.highlight { color:rgba(255,255,255,0.15); }
+  .star-label.highlight .label-name { color:rgba(255,255,255,0.35); }
+  .star-label.hidden { opacity:0; }
 
   .connector-line { position:fixed; height:1px; z-index:15; opacity:0; transition:opacity 0.3s; background:linear-gradient(90deg,rgba(255,255,255,0.25),rgba(255,255,255,0.03)); }
   .connector-line.visible { opacity:1; }
 
-  /* HUD Frame */
-  .hud-frame { position:fixed; z-index:20; padding:16px 20px; opacity:0; pointer-events:none; transition:opacity 0.25s; min-width:240px; }
-  .hud-frame.visible { opacity:1; pointer-events:auto; }
+  /* HUD Frame — expands from center like signal acquisition */
+  .hud-frame { position:fixed; z-index:20; padding:16px 20px; opacity:0; pointer-events:none; min-width:240px; }
+  .hud-frame.visible { opacity:1; pointer-events:auto; animation: hud-expand 0.35s ease-out; }
+  @keyframes hud-expand {
+    0%   { clip-path: inset(46% 30% 46% 30%); opacity:0.6; }
+    25%  { clip-path: inset(46% 0% 46% 0%);   opacity:0.8; }
+    55%  { clip-path: inset(5% 0% 5% 0%);     opacity:0.95; }
+    100% { clip-path: inset(0% 0% 0% 0%);     opacity:1; }
+  }
   .c { position:absolute; width:14px; height:14px; }
   .c-tl { top:0;left:0;border-top:1px solid rgba(255,255,255,0.2);border-left:1px solid rgba(255,255,255,0.2); }
   .c-tr { top:0;right:0;border-top:1px solid rgba(255,255,255,0.2);border-right:1px solid rgba(255,255,255,0.2); }
@@ -82,32 +91,44 @@
     transition: background 0.5s;
     display:flex; align-items:center; justify-content:center;
   }
-  .zoom-overlay.active { background:rgba(3,5,8,0.88); pointer-events:auto; }
+  .zoom-overlay.active { background:rgba(3,5,8,0.4); pointer-events:auto; }
 
+  /* Chamfer card */
   .zoom-card {
+    --ch: 20px;
     position: relative;
     display:flex; align-items:center; gap:0;
     max-width:880px; width:90%;
-    padding: 40px 44px;
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 16px;
+    padding: 44px 48px;
     background: rgba(8,10,20,0.85);
     backdrop-filter: blur(12px);
     opacity:0; transform: scale(0.96);
     transition: opacity 0.4s 0.1s, transform 0.4s 0.1s;
-    overflow: hidden;
+    clip-path: polygon(var(--ch) 0%, calc(100% - var(--ch)) 0%, 100% var(--ch), 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%, 0% calc(100% - var(--ch)), 0% var(--ch));
   }
   .zoom-overlay.active .zoom-card { opacity:1; transform: scale(1); }
 
-  /* Card corner brackets */
-  .zoom-card .zc-corner { position: absolute; width: 20px; height: 20px; }
-  .zoom-card .zcc-tl { top:0;left:0;border-top:1px solid rgba(255,255,255,0.1);border-left:1px solid rgba(255,255,255,0.1); }
-  .zoom-card .zcc-tr { top:0;right:0;border-top:1px solid rgba(255,255,255,0.1);border-right:1px solid rgba(255,255,255,0.1); }
-  .zoom-card .zcc-br { bottom:0;right:0;border-bottom:1px solid rgba(255,255,255,0.1);border-right:1px solid rgba(255,255,255,0.1); }
-  .zoom-card .zcc-bl { bottom:0;left:0;border-bottom:1px solid rgba(255,255,255,0.1);border-left:1px solid rgba(255,255,255,0.1); }
+  /* SVG chamfer border */
+  .chamfer-border { position:absolute; inset:0; pointer-events:none; z-index:4; }
+  .chamfer-border svg { width:100%; height:100%; overflow:visible; }
+  .chamfer-border polygon { fill:none; stroke:rgba(255,255,255,0.22); stroke-width:1; }
+
+  /* Tick marks along edges */
+  .tick-marks { position:absolute; inset:0; pointer-events:none; z-index:4; }
+  .tick { position:absolute; background:rgba(255,255,255,0.07); }
+  .tick.h { width:1px; }
+  .tick.v { height:1px; }
+  .tick.accent { background:rgba(255,255,255,0.14); }
+
+  /* Chamfer diagonal accents */
+  .chamfer-line { position:absolute; height:1px; width:28px; background:rgba(255,255,255,0.2); pointer-events:none; z-index:6; }
+  .chamfer-line.tl { top:10px; left:4px; transform:rotate(-45deg); transform-origin:left center; }
+  .chamfer-line.tr { top:10px; right:4px; transform:rotate(45deg); transform-origin:right center; }
+  .chamfer-line.br { bottom:10px; right:4px; transform:rotate(-45deg); transform-origin:right center; }
+  .chamfer-line.bl { bottom:10px; left:4px; transform:rotate(45deg); transform-origin:left center; }
 
   /* CRT noise — scoped to card only */
-  .card-crt { position: absolute; inset: 0; border-radius: 16px; overflow: hidden; pointer-events: none; z-index: 5; }
+  .card-crt { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:5; clip-path:polygon(var(--ch) 0%, calc(100% - var(--ch)) 0%, 100% var(--ch), 100% calc(100% - var(--ch)), calc(100% - var(--ch)) 100%, var(--ch) 100%, 0% calc(100% - var(--ch)), 0% var(--ch)); }
   .card-crt canvas { width: 100%; height: 100%; opacity: 0; mix-blend-mode: screen; }
   .card-crt canvas.active { opacity: 1; }
   .card-crt .card-scanlines {
@@ -201,7 +222,21 @@
 <!-- Zoom card -->
 <div class="zoom-overlay" id="zoomOverlay" onclick="handleOverlayClick(event)">
   <div class="zoom-card" id="zoomCard">
-    <div class="zc-corner zcc-tl"></div><div class="zc-corner zcc-tr"></div><div class="zc-corner zcc-br"></div><div class="zc-corner zcc-bl"></div>
+    <!-- Chamfer border (SVG follows clip-path shape) -->
+    <div class="chamfer-border" id="chamferBorder">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon vector-effect="non-scaling-stroke" points="2.27,0 97.73,0 100,2.27 100,97.73 97.73,100 2.27,100 0,97.73 0,2.27" />
+      </svg>
+    </div>
+
+    <!-- Tick marks along edges -->
+    <div class="tick-marks" id="tickMarks"></div>
+
+    <!-- Chamfer diagonal accents -->
+    <div class="chamfer-line tl"></div>
+    <div class="chamfer-line tr"></div>
+    <div class="chamfer-line br"></div>
+    <div class="chamfer-line bl"></div>
 
     <!-- CRT noise scoped to card -->
     <div class="card-crt" id="cardCrt">
@@ -323,10 +358,54 @@ function staggerReveal(elements, baseDelay, step) {
   });
 }
 
+// Generate tick marks along card edges
+function generateTicks(){
+  const tm=document.getElementById('tickMarks');
+  if(tm.children.length)return;
+  // Top & bottom edges (horizontal ticks)
+  for(let pct=8;pct<=92;pct+=6){
+    const accent=(pct%18===0);
+    // top
+    let t=document.createElement('div');t.className='tick h'+(accent?' accent':'');
+    t.style.cssText=`left:${pct}%;top:0;height:${accent?6:4}px;`;tm.appendChild(t);
+    // bottom
+    let b=document.createElement('div');b.className='tick h'+(accent?' accent':'');
+    b.style.cssText=`left:${pct}%;bottom:0;height:${accent?6:4}px;`;tm.appendChild(b);
+  }
+  // Left & right edges (vertical ticks)
+  for(let pct=8;pct<=92;pct+=8){
+    const accent=(pct%24===0);
+    // left
+    let l=document.createElement('div');l.className='tick v'+(accent?' accent':'');
+    l.style.cssText=`top:${pct}%;left:0;width:${accent?6:4}px;`;tm.appendChild(l);
+    // right
+    let r=document.createElement('div');r.className='tick v'+(accent?' accent':'');
+    r.style.cssText=`top:${pct}%;right:0;width:${accent?6:4}px;`;tm.appendChild(r);
+  }
+}
+generateTicks();
+
+// Link star hover → label highlight
+document.querySelectorAll('.star-point').forEach(sp=>{
+  const label=sp.nextElementSibling;
+  if(!label||!label.classList.contains('star-label'))return;
+  sp.addEventListener('mouseenter',()=>{ if(!activeStarId) label.classList.add('highlight'); });
+  sp.addEventListener('mouseleave',()=>label.classList.remove('highlight'));
+});
+
 function showHud(starId){
   if(activeStarId===starId){closeHud();return;}
   closeHud();activeStarId=starId;
-  const star=document.getElementById(starId),rect=star.getBoundingClientRect(),data=starData[starId];
+
+  // Fade out the label first
+  const starEl=document.getElementById(starId);
+  const label=starEl.nextElementSibling;
+  if(label&&label.classList.contains('star-label')){
+    label.classList.remove('highlight');
+    label.classList.add('hidden');
+  }
+
+  const rect=starEl.getBoundingClientRect(),data=starData[starId];
   const frame=document.getElementById('hudFrame'),sx=rect.left+rect.width/2,sy=rect.top+rect.height/2;
   frame.style.left=(sx+52)+'px';frame.style.top=(sy-30)+'px';
   const conn=document.getElementById('connectorLine');
@@ -337,6 +416,8 @@ function showHud(starId){
   const more=document.getElementById('hudMore');
   more.classList.remove('visible');
   document.getElementById('starPreview').classList.remove('visible');
+
+  // Frame expands from center immediately — no delay
   frame.classList.add('visible');conn.classList.add('visible');
 
   typeText(document.getElementById('hudCatalog'),data.catalog,15,()=>{
@@ -359,11 +440,15 @@ function showHud(starId){
 
 function closeHud(){
   clearTimers();
-  document.getElementById('hudFrame').classList.remove('visible');
+  const hf=document.getElementById('hudFrame');
+  hf.classList.remove('visible');
+  hf.style.animation='none'; hf.offsetHeight; hf.style.animation=''; // reset for re-trigger
   document.getElementById('connectorLine').classList.remove('visible');
   document.getElementById('hudMore').classList.remove('visible');
   document.getElementById('starPreview').classList.remove('visible');
   if(globalCursor.parentNode)globalCursor.remove();
+  // Restore all hidden labels
+  document.querySelectorAll('.star-label.hidden').forEach(l=>l.classList.remove('hidden'));
   activeStarId=null;
 }
 
