@@ -11,7 +11,7 @@
 
 A single-page interactive portfolio site built as a **scroll-driven flight through space**. The visitor travels through four spiral galaxies — each representing a life domain (Education, Research, Projects, Contact). Stars within galaxies are clickable and reveal content in sci-fi HUD frames with CRT effects.
 
-**Tech stack:** Single HTML file, Three.js (WebGL), vanilla JS, no build tools.
+**Tech stack:** Single HTML file, Three.js r160+ (self-hosted, WebGL2), vanilla JS, no build tools.
 
 **Target:** Modern browsers (Chrome, Safari, Firefox), desktop + mobile.
 
@@ -49,15 +49,27 @@ Total scroll distance: ~1200vh mapped to camera z-position.
 
 ## 3. Hero Screen
 
-### 3.1 Signal Intro
+### 3.1 Loading & Signal Intro
+
+The signal intro doubles as a loading screen — Three.js initializes in the background while the intro plays.
+
+**Sequence:**
+1. Page loads → signal intro starts immediately (no Three.js dependency)
+2. Three.js scene initializes in parallel (geometry, shaders, textures)
+3. Intro finishes (~3s) → check if Three.js is ready
+   - **Ready:** fade to hero
+   - **Not ready:** hold on `LINK ESTABLISHED` text, add subtle `...` pulsing until ready
+4. If WebGL unavailable entirely: show static fallback (see Section 10.4)
+
+**Signal intro details:**
 - Full-screen dark overlay with noise canvas
 - 3 lines typed at 25ms per character:
   1. `SCANNING DEEP SPACE...`
   2. `SIGNAL ACQUIRED · 1420.405 MHz`
   3. `LINK ESTABLISHED`
 - Noise intensity decreases with each line
-- Click anywhere to skip
-- Duration: ~3 seconds total
+- Click anywhere to skip (only if Three.js is ready)
+- Duration: ~3 seconds total (minimum, extends if GPU is slow)
 
 ### 3.2 Hero Content
 After intro fades (0.6s opacity transition), hero reveals:
@@ -96,13 +108,28 @@ After intro fades (0.6s opacity transition), hero reveals:
 ## 4. Scroll-Driven Flight
 
 ### 4.1 Camera System
-- Three.js `PerspectiveCamera`, FOV 60, near 0.1, far 50000
+- Three.js `PerspectiveCamera`, FOV 60, near 0.1, far 15000
 - Camera moves along z-axis based on scroll position
-- Scroll position → camera z mapping is non-linear:
-  - **Inside galaxy:** slow mapping (1vh scroll ≈ small z change) — linger and explore
-  - **Between galaxies:** fast mapping (1vh scroll ≈ large z change) — acceleration zone
+- `renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))` — cap at 2x for performance
+- Scroll position → camera z mapping is piecewise-linear with eased transitions between segments
 
-### 4.2 Scroll Zones
+### 4.2 Scroll Zone Map
+
+| Scroll (vh) | Phase | Camera z | Speed | Notes |
+|-------------|-------|----------|-------|-------|
+| 0–50 | Hero | 0 | static | Hero visible, no flight |
+| 50–120 | Transit 1 | 0 → -1500 | fast (21z/vh) | Star stretch active |
+| 120–250 | Galaxy 1: Education | -1500 → -2500 | slow (7.7z/vh) | Stars clickable |
+| 250–330 | Transit 2 | -2500 → -4500 | fast (25z/vh) | Star stretch |
+| 330–460 | Galaxy 2: Research | -4500 → -5500 | slow (7.7z/vh) | Stars clickable |
+| 460–540 | Transit 3 | -5500 → -7500 | fast (25z/vh) | Star stretch |
+| 540–670 | Galaxy 3: Projects | -7500 → -8500 | slow (7.7z/vh) | Stars clickable |
+| 670–750 | Transit 4 | -8500 → -10500 | fast (25z/vh) | Star stretch |
+| 750–880 | Galaxy 4: Contact | -10500 → -11500 | slow (7.7z/vh) | Stars clickable |
+| 880–950 | Exit | -11500 → -12500 | slow | Approach dark screen |
+| 950–1000 | Hyperspace prompt | -12500 | static | "INITIATE RETURN JUMP" |
+
+Transitions between fast/slow zones use `smoothstep` easing over ~10vh to avoid jarring speed changes.
 
 Each galaxy has 3 phases:
 
@@ -143,6 +170,7 @@ Between galaxies, stars visually stretch along the z-axis:
 - Max stretch: 15–25px (screen space)
 - Opacity during stretch: slightly brighter (1.2x)
 - Background: subtle radial speed lines (optional, CSS overlay)
+- **Note:** Verify `gl_ALIASED_POINT_SIZE_RANGE` at init. If max point size < 25, use instanced `THREE.LineGeometry` for stretched stars instead of `gl_PointSize`.
 
 ---
 
@@ -200,12 +228,18 @@ Where:
 
 ### 5.3 Interactive Stars
 
-Within each galaxy, certain stars are **content stars** (clickable):
+Within each galaxy, certain stars are **content stars** (clickable). These are rendered as **separate `THREE.Mesh` objects** (not part of the background `Points` buffer) to enable reliable `Raycaster` hit detection.
+
+**Implementation:**
+- Each content star: `THREE.SphereGeometry(radius, 8, 8)` with emissive material
+- Positioned at their spiral-arm coordinates (same math as background stars)
+- Invisible `THREE.Mesh` hit sphere around each (radius: 20px screen-space desktop, 36px mobile) — recalculated on camera move via `vector.project(camera)` distance scaling
+- Background `Points` do NOT include content star positions (no double-rendering)
 
 **Visual distinction:**
 - Slightly larger (1.5x) than background stars
-- Subtle pulse animation (size oscillation)
-- On hover (desktop): glow ring appears, star label fades in
+- Subtle pulse animation (size oscillation via uniform)
+- On hover (desktop): glow ring sprite appears, star label fades in (HTML overlay)
 - Hit area: 20px radius (desktop), 36px radius (mobile)
 
 **Content star data structure:**
@@ -253,10 +287,12 @@ Close (X / click outside / Esc) → scroll resumes
 - Camera position preserved during lock
 
 ### 6.3 HUD Frame
+- **Positioning:** HTML overlay element, positioned via `THREE.Vector3.project(camera)` to get screen coords of the clicked star. HUD placed offset from star (52px right, centered vertically). If near screen edge, flip to opposite side.
 - Corner brackets (`┌ ┐ └ ┘`) with monospace text
 - Expand animation: `clip-path: inset()` from center to full
 - Content: catalog ID, star name, title, body text
 - Typewriter effect at 30ms per character, single global cursor
+- HUD does not need to track star movement (scroll is locked during interaction)
 
 ### 6.4 Zoom Card (Detail View)
 - Chamfer clip-path border:
@@ -299,15 +335,26 @@ Close (X / click outside / Esc) → scroll resumes
 
 ## 8. Hyperspace Jump (End)
 
-After Contact galaxy, continued scrolling leads to:
+After Contact galaxy, continued scrolling leads to a dark void with the return jump prompt.
 
-1. **Dark screen** — nearly black, single small text: `INITIATE RETURN JUMP` (clickable)
-2. **Click →** star stretch animation intensifies (stars become long streaks)
-3. **Flash** — brief white flash (0.1s)
-4. **Back to hero** — scroll position resets to 0, hero is visible again
-5. Signal intro does NOT replay — hero appears immediately
+### 8.1 Trigger
+- Scroll reaches 950–1000vh zone
+- Single small text appears: `INITIATE RETURN JUMP` (IBM Plex Mono 10px, 0.08 opacity, pulsing)
+- Click/tap to activate
 
-Implementation: CSS animation for star streaks + JS scroll reset + hero state management.
+### 8.2 Jump Sequence (exact steps)
+1. **Lock scroll** — `document.body.style.overflow = 'hidden'`
+2. **Star stretch ramp** — shader `u_stretch` uniform animates from 0 → 1 over 0.8s (ease-in)
+3. **Max stretch hold** — stars are long streaks for 0.3s
+4. **White flash** — CSS overlay `opacity: 0 → 1` over 0.1s
+5. **Teleport** — during flash (screen is white): `camera.position.z = 0`, `window.scrollTo({top: 0, behavior: 'instant'})`
+6. **Flash fade** — overlay `opacity: 1 → 0` over 0.3s
+7. **Hero visible** — signal intro does NOT replay, hero is shown immediately with CRT effects active
+8. **Unlock scroll** — `document.body.style.overflow = ''`
+
+### 8.3 Mobile Considerations
+- Touch scroll momentum must be killed before scroll reset: call `e.preventDefault()` on touchmove during jump
+- `scrollTo({behavior: 'instant'})` avoids smooth-scroll interference
 
 ---
 
@@ -371,10 +418,18 @@ Implementation: CSS animation for star streaks + JS scroll reset + hero state ma
 - Scroll hint: "tap stars to explore" instead of click
 
 ### 10.4 GPU Fallback
-- Detect weak GPU via `renderer.capabilities` (max texture size, vertex count)
-- Fallback: static sections with parallax star background (CSS-based)
-- Each section shows galaxy as static image + clickable star list
+
+**Detection criteria (any triggers fallback):**
+- WebGL2 unavailable (`canvas.getContext('webgl2')` returns null)
+- `renderer.capabilities.maxTextureSize < 4096`
+- FPS probe: render 60 frames of background stars only; if average < 25fps → fallback
+- `navigator.hardwareConcurrency < 2` (single-core device)
+
+**Fallback experience:**
+- Static sections with CSS parallax star background
+- Each section shows galaxy name + clickable star list (HTML)
 - Same content, same CRT card design, no Three.js flight
+- Hero works normally (it's pure HTML/CSS/Canvas, no Three.js dependency)
 
 ---
 
@@ -445,7 +500,7 @@ CRT blue channel:  rgba(60, 100, 255, 0.07–0.1)
 
 ## 14. File Architecture
 
-Single HTML file (`index.html`) with internal structure:
+Single HTML file (`index.html`). JS organized as ES6 classes to manage complexity (~5000–7000 lines estimated).
 
 ```html
 <!DOCTYPE html>
@@ -458,30 +513,46 @@ Single HTML file (`index.html`) with internal structure:
     /* 3. HUD frame */
     /* 4. Zoom card */
     /* 5. Navigation UI */
-    /* 6. Mobile overrides */
+    /* 6. Mobile overrides (@media pointer:coarse, max-width) */
   </style>
 </head>
 <body>
   <!-- Hero HTML (signal intro, name, HUD corners) -->
   <!-- UI overlays (depth indicator, contacts, scroll hints) -->
+  <!-- Hidden star content for a11y (see 15) -->
   <!-- Three.js canvas (injected by renderer) -->
 
   <script>
-    // === CONFIG ===
-    // === UTILS (debounce, spring, lerp) ===
-    // === AnimationCoordinator (single rAF master loop) ===
-    // === HeroSystem (intro, CRT effects, reveal) ===
-    // === FlightSystem (scroll → camera, velocity, zones) ===
-    // === GalaxyGenerator (spiral math, star placement) ===
-    // === StarInteraction (raycasting, HUD, cards) ===
-    // === UISystem (depth bar, hints, contacts) ===
-    // === HyperspaceSystem (end jump, reset) ===
-    // === MobileAdapter (touch, GPU detect, fallback) ===
-    // === INIT ===
+    // === CONFIG (all magic numbers, zone table, galaxy params) ===
+    // === UTILS (debounce, lerp, smoothstep, spring) ===
+
+    class AnimationCoordinator { /* single rAF, registers/unregisters systems */ }
+    class HeroSystem { /* intro, CRT effects, reveal, visibility gating */ }
+    class FlightSystem { /* scroll → camera z, velocity calc, zone detection */ }
+    class GalaxyGenerator { /* spiral math, BufferGeometry, sprite generation */ }
+    class StarInteraction { /* raycasting, HUD positioning, card open/close, scroll lock */ }
+    class UISystem { /* depth bar, hints, contacts visibility */ }
+    class HyperspaceSystem { /* end prompt, jump sequence, scroll reset */ }
+    class MobileAdapter { /* touch handling, GPU probe, fallback trigger */ }
+    class ErrorRecovery { /* WebGL context loss, shader fallback, font fallback */ }
+
+    // === INIT (instantiate, wire up, start) ===
   </script>
 </body>
 </html>
 ```
+
+---
+
+## 14.1 Error Handling
+
+| Failure | Detection | Recovery |
+|---------|-----------|----------|
+| WebGL context lost | `canvas.addEventListener('webglcontextlost')` | Pause rAF, show "Restoring..." overlay, attempt restore on `webglcontextrestored` |
+| Shader compile fail | `gl.getShaderInfoLog()` returns errors | Fall back to `THREE.PointsMaterial` (no custom shaders) |
+| Font load fail | `document.fonts.check()` returns false after 5s | CSS font-stack fallback: `'Saira' → 'Arial'`, `'IBM Plex Mono' → 'Courier New'` |
+| rAF suspended | Tab backgrounded / battery saver | `document.addEventListener('visibilitychange')` — pause all animation, resume on return |
+| Touch scroll conflicts on mobile | iOS rubber-band, Android fling | Use native scroll (no touch event hijacking). Scroll-to-z mapping handles momentum naturally. Non-linear mapping means overshoot in transit zones is harmless (just empty space). |
 
 ---
 
@@ -490,10 +561,10 @@ Single HTML file (`index.html`) with internal structure:
 - `prefers-reduced-motion`: disable star stretch, CRT shifts, twinkling. Keep static content readable.
 - `<main>` landmark wrapping content
 - Heading hierarchy for screen readers (visually hidden if needed)
-- Star content accessible via keyboard (Tab to navigate stars, Enter to open)
+- **Keyboard navigation:** Hidden off-screen `<button>` elements for each content star, synced to star data. `Tab` cycles through buttons, `Enter` opens card. `aria-label` provides star name. Buttons are grouped per galaxy in a visually-hidden `<nav>` with `aria-label="Galaxy: Education"` etc.
 - Skip-to-content link
 - OG/Twitter meta tags for link previews
-- Minimum text contrast: 4.5:1 for body text, 3:1 for decorative labels
+- **Contrast:** Informational text (card body, titles, subtitles) must meet 4.5:1. Decorative/ambient text (coordinates, catalog labels, corner HUD, scroll hints) at 0.04–0.1 opacity is explicitly exempt — these are atmospheric elements, not essential content. All essential content is accessible via star card interactions at full readable contrast.
 
 ---
 
@@ -503,4 +574,3 @@ Single HTML file (`index.html`) with internal structure:
 2. Additional projects to add to Galaxy 3
 3. Whether to include a brief "about me" section within hero or as a separate star
 4. Sound design — ambient space audio? (likely not for v1, but worth considering)
-5. Loading screen design while Three.js initializes
