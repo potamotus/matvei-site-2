@@ -32,12 +32,12 @@
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
     opacity:0;transition:opacity 0.8s;
   }
-  .hero.active{opacity:1;filter:url(#analogInterference);}
+  .hero.active{opacity:1;}
 
   .hero-grid{
     position:absolute;inset:0;pointer-events:none;z-index:60;
     background-image:
-      linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px);
+      linear-gradient(rgba(255,255,255,0.035) 0.5px,transparent 0.5px);
     background-size:100% 40px;
     mask-image:radial-gradient(ellipse 80% 70% at center,black 40%,transparent 75%);
     -webkit-mask-image:radial-gradient(ellipse 80% 70% at center,black 40%,transparent 75%);
@@ -62,7 +62,7 @@
   /* Scanlines — more visible, with subtle flicker */
   .hero-scanlines{
     position:absolute;inset:0;pointer-events:none;z-index:50;
-    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.02) 2px,rgba(255,255,255,0.02) 4px);
+    background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.035) 3px,rgba(255,255,255,0.035) 4px);
     animation:scanline-pulse 4s ease-in-out infinite;
   }
   @keyframes scanline-pulse{
@@ -82,37 +82,17 @@
   .hero-catalog.show{animation:rise 0.6s ease-out forwards;}
 
   /* ===== NAME ===== */
-  .hero-name{
-    position:relative;z-index:10;
+  .name-wrap{position:relative;z-index:10;opacity:0;}
+  .name-wrap.show{opacity:1;}
+  .hero-name,.hero-name-shift{
     font-size:clamp(38px,6.5vw,76px);
     font-weight:600;letter-spacing:clamp(6px,1.5vw,18px);
     text-transform:uppercase;
     color:rgba(255,255,255,0.95);
-    opacity:0;
   }
-  .hero-name.show{opacity:1;}
-  .hero-name .ch{display:inline-block;}
-
-  /* Chromatic aberration — subtle breathing */
-  .hero-name::before,
-  .hero-name::after{
-    content:attr(data-text);position:absolute;inset:0;pointer-events:none;
-    font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit;
-    opacity:0;
-  }
-  .hero-name.resolved::before{color:rgba(255,60,60,0.1);animation:chroma-red 3s ease-in-out infinite;}
-  .hero-name.resolved::after{color:rgba(60,100,255,0.1);animation:chroma-blue 3s ease-in-out infinite;}
-  @keyframes chroma-red{
-    0%,100%{transform:translate(-0.6px,0);opacity:0.05;}
-    25%{transform:translate(-1.5px,0.2px);opacity:0.1;}
-    50%{transform:translate(-0.4px,-0.1px);opacity:0.04;}
-    75%{transform:translate(-1.2px,0.1px);opacity:0.08;}
-  }
-  @keyframes chroma-blue{
-    0%,100%{transform:translate(0.6px,0);opacity:0.05;}
-    25%{transform:translate(1.2px,-0.1px);opacity:0.07;}
-    50%{transform:translate(1.5px,0.2px);opacity:0.1;}
-    75%{transform:translate(0.4px,-0.1px);opacity:0.04;}
+  .hero-name-shift{
+    position:absolute;left:0;top:0;width:100%;height:100%;
+    pointer-events:none;clip-path:inset(0 0 100% 0);
   }
 
   /* Divider — removed */
@@ -157,16 +137,6 @@
 
 <canvas id="stars"></canvas>
 
-<!-- SVG filter for analog interference -->
-<svg width="0" height="0" style="position:absolute;">
-  <defs>
-    <filter id="analogInterference" x="-5%" y="-5%" width="110%" height="110%">
-      <feTurbulence id="turbulence" type="turbulence" baseFrequency="0 0.4" numOctaves="3" seed="0" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
-    </filter>
-  </defs>
-</svg>
-
 <!-- SIGNAL INTRO -->
 <div class="signal-intro" id="signalIntro">
   <canvas id="noiseCanvas"></canvas>
@@ -185,7 +155,10 @@
   <div class="corner-hud br" id="hudBR">LAT: 55.7558°N<br>LON: 37.6173°E<br>BODY: SOL-III</div>
 
   <div class="hero-catalog" id="heroCatalog">Field log · expedition 2026</div>
-  <div class="hero-name" id="heroName" data-text="Matvei Tkhai"></div>
+  <div class="name-wrap" id="nameWrap">
+    <div class="hero-name" id="heroName"></div>
+    <div class="hero-name-shift" id="nameShift"></div>
+  </div>
   <div class="hero-line" id="heroLine"></div>
   <div class="hero-sub" id="heroSub">economist · builder</div>
   <div class="hero-coords" id="heroCoords">55.7558° N · 37.6173° E · Sol III</div>
@@ -275,19 +248,20 @@ function runIntro(){
 }
 
 const nameEl=document.getElementById('heroName');
+const nameShift=document.getElementById('nameShift');
 
 // ===== HERO REVEAL =====
 function revealHero(){
   document.getElementById('hero').classList.add('active');
-  nameEl.textContent='Matvei Tkhai';
+  nameEl.textContent='MATVEI TKHAI';
+  nameShift.textContent='MATVEI TKHAI';
 
   const steps=[
-    ['heroCatalog',200],['heroName',350],['heroLine',800],
+    ['heroCatalog',200],['nameWrap',350],['heroLine',800],
     ['heroSub',950],['heroCoords',1100],
     ['hudTL',500],['hudTR',600],['hudBR',750],['heroScroll',1500],
   ];
   steps.forEach(([id,delay])=>setTimeout(()=>document.getElementById(id).classList.add('show'),delay));
-  setTimeout(()=>nameEl.classList.add('resolved'),600);
 }
 
 runIntro();
@@ -298,10 +272,42 @@ document.getElementById('signalIntro').addEventListener('click',()=>{
   document.getElementById('signalIntro').classList.add('done');revealHero();
 });
 
-// Analog interference — slow drift of turbulence seed (~10fps)
-const turbEl=document.getElementById('turbulence');
-let seedVal=0;
-setInterval(()=>{seedVal++;turbEl.setAttribute('seed',seedVal);},100);
+// ===== CRT INTERFERENCE =====
+const heroEl=document.getElementById('hero');
+
+// Name: sharp band shifts — multiple bands in quick succession
+function glitchName(){
+  const bands=1+Math.floor(Math.random()*3); // 1-3 bands at once
+  for(let b=0;b<bands;b++){
+    setTimeout(()=>{
+      const top=Math.random()*85;
+      const h=3+Math.random()*5; // 3-8%
+      const bot=Math.min(100,top+h);
+      const shift=(Math.random()>0.5?1:-1)*(3+Math.random()*5);
+      // Cut band from original
+      nameEl.style.clipPath=`polygon(0 0,100% 0,100% ${top}%,0 ${top}%,0 ${bot}%,100% ${bot}%,100% 100%,0 100%)`;
+      // Show shifted copy in that band
+      nameShift.style.clipPath=`inset(${top}% 0 ${100-bot}% 0)`;
+      nameShift.style.transform=`translateX(${shift}px)`;
+      setTimeout(()=>{
+        nameEl.style.clipPath='none';
+        nameShift.style.clipPath='inset(0 0 100% 0)';
+        nameShift.style.transform='';
+      },60+Math.random()*80);
+    },b*80);
+  }
+  setTimeout(glitchName,200+Math.random()*600);
+}
+setTimeout(glitchName,2000);
+
+// Whole screen: occasional subtle jitter
+function screenJitter(){
+  const shift=(Math.random()>0.5?1:-1)*(1+Math.random()*2);
+  heroEl.style.transform=`translateX(${shift}px)`;
+  setTimeout(()=>{heroEl.style.transform='';},40+Math.random()*60);
+  setTimeout(screenJitter,1500+Math.random()*3000);
+}
+setTimeout(screenJitter,3000);
 
 window.addEventListener('resize',()=>{
   canvas.width=innerWidth;canvas.height=innerHeight;
