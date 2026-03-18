@@ -47,6 +47,23 @@ Total scroll distance: ~1200vh mapped to camera z-position.
 
 ---
 
+## 2.1 Existing Prototypes (DO NOT REWRITE)
+
+The following prototypes have been extensively iterated and are production-ready. They must be **ported directly** into the final site, not rewritten from scratch:
+
+| Prototype | Path | What it contains |
+|-----------|------|-----------------|
+| **Hero** | `brainstorm/iteration-3-hero/hero-v2.html` | Signal intro, CRT shift bands (clip-path), scanlines, grid, noise canvas, corner HUD, chromatic aberration, whole-screen jitter, all timings tuned |
+| **Card interactions** | `brainstorm/iteration-2-cards/interaction-v7.html` | Star hover/click, label highlight→fade, HUD expand-from-center (clip-path animation), typewriter text, zoom card with chamfer border, SVG ticks, CRT boot effect (noise canvas, scanlines, chromatic), staggered reveal |
+
+**Integration approach:**
+- Extract CSS and JS from these prototypes into the corresponding classes (`HeroSystem`, `StarInteraction`)
+- Adapt positioning from fixed pixel coords to Three.js `Vector3.project()` screen coords
+- Keep all visual parameters (opacities, timings, easing, sizes) exactly as-is
+- The hero HTML structure ports directly into `index.html`
+
+---
+
 ## 3. Hero Screen
 
 ### 3.1 Loading & Signal Intro
