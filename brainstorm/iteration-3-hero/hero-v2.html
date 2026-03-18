@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero v2 — Analog Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#030508;color:#fff;font-family:'Saira',sans-serif;overflow:hidden;width:100vw;height:100vh;}
+  canvas#stars{position:fixed;inset:0;z-index:0;}
+
+  /* ===== SIGNAL INTRO ===== */
+  .signal-intro{
+    position:fixed;inset:0;z-index:200;background:#030508;
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity 0.6s;
+  }
+  .signal-intro.done{opacity:0;pointer-events:none;}
+  .signal-intro canvas{position:absolute;inset:0;width:100%;height:100%;}
+  .signal-text{
+    position:relative;z-index:2;font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:3px;text-transform:uppercase;
+    color:rgba(255,255,255,0.4);text-align:center;line-height:2.2;
+  }
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative;z-index:10;height:100vh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    opacity:0;transition:opacity 0.8s;
+  }
+  .hero.active{opacity:1;filter:url(#analogInterference);}
+
+  .hero-grid{
+    position:absolute;inset:0;pointer-events:none;z-index:60;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px);
+    background-size:100% 40px;
+    mask-image:radial-gradient(ellipse 80% 70% at center,black 40%,transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 70% at center,black 40%,transparent 75%);
+    animation:grid-flicker 6s ease-in-out infinite;
+  }
+  @keyframes grid-flicker{
+    0%,100%{opacity:1;}
+    30%{opacity:0.7;}
+    50%{opacity:1.1;}
+    70%{opacity:0.8;}
+    90%{opacity:1;}
+  }
+
+  .binary-stream{position:absolute;inset:0;overflow:hidden;pointer-events:none;opacity:0.02;z-index:1;}
+  .binary-col{
+    position:absolute;top:0;font-family:'IBM Plex Mono',monospace;font-size:9px;
+    line-height:1.8;color:rgba(255,255,255,0.6);
+    writing-mode:vertical-rl;white-space:nowrap;animation:stream-down linear infinite;
+  }
+  @keyframes stream-down{0%{transform:translateY(-100%);}100%{transform:translateY(100vh);}}
+
+  /* Scanlines — more visible, with subtle flicker */
+  .hero-scanlines{
+    position:absolute;inset:0;pointer-events:none;z-index:50;
+    background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.02) 2px,rgba(255,255,255,0.02) 4px);
+    animation:scanline-pulse 4s ease-in-out infinite;
+  }
+  @keyframes scanline-pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:0.7;}
+  }
+
+  .hero-noise{position:absolute;inset:0;pointer-events:none;z-index:49;opacity:0.03;}
+
+  /* Catalog */
+  .hero-catalog{
+    position:relative;z-index:10;font-family:'IBM Plex Mono',monospace;
+    font-size:10px;letter-spacing:3px;text-transform:uppercase;
+    color:rgba(255,255,255,0.07);margin-bottom:20px;
+    opacity:0;transform:translateY(6px);
+  }
+  .hero-catalog.show{animation:rise 0.6s ease-out forwards;}
+
+  /* ===== NAME ===== */
+  .hero-name{
+    position:relative;z-index:10;
+    font-size:clamp(38px,6.5vw,76px);
+    font-weight:600;letter-spacing:clamp(6px,1.5vw,18px);
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.95);
+    opacity:0;
+  }
+  .hero-name.show{opacity:1;}
+  .hero-name .ch{display:inline-block;}
+
+  /* Chromatic aberration — subtle breathing */
+  .hero-name::before,
+  .hero-name::after{
+    content:attr(data-text);position:absolute;inset:0;pointer-events:none;
+    font-size:inherit;font-weight:inherit;letter-spacing:inherit;text-transform:inherit;
+    opacity:0;
+  }
+  .hero-name.resolved::before{color:rgba(255,60,60,0.1);animation:chroma-red 3s ease-in-out infinite;}
+  .hero-name.resolved::after{color:rgba(60,100,255,0.1);animation:chroma-blue 3s ease-in-out infinite;}
+  @keyframes chroma-red{
+    0%,100%{transform:translate(-0.6px,0);opacity:0.05;}
+    25%{transform:translate(-1.5px,0.2px);opacity:0.1;}
+    50%{transform:translate(-0.4px,-0.1px);opacity:0.04;}
+    75%{transform:translate(-1.2px,0.1px);opacity:0.08;}
+  }
+  @keyframes chroma-blue{
+    0%,100%{transform:translate(0.6px,0);opacity:0.05;}
+    25%{transform:translate(1.2px,-0.1px);opacity:0.07;}
+    50%{transform:translate(1.5px,0.2px);opacity:0.1;}
+    75%{transform:translate(0.4px,-0.1px);opacity:0.04;}
+  }
+
+  /* Divider — removed */
+  .hero-line{display:none;}
+
+  .hero-sub{
+    position:relative;z-index:10;font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:2.5px;text-transform:uppercase;
+    color:rgba(255,255,255,0.1);line-height:1.8;opacity:0;transform:translateY(6px);
+  }
+  .hero-sub.show{animation:rise 0.6s ease-out forwards;}
+
+  .hero-coords{
+    position:relative;z-index:10;font-family:'IBM Plex Mono',monospace;
+    font-size:9px;letter-spacing:2px;color:rgba(255,255,255,0.04);margin-top:20px;opacity:0;
+  }
+  .hero-coords.show{animation:rise 0.5s ease-out forwards;}
+
+  .hero-scroll{
+    position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:10;
+    font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:3px;
+    text-transform:uppercase;color:rgba(255,255,255,0.06);opacity:0;
+  }
+  .hero-scroll.show{animation:rise 0.5s ease-out forwards;}
+  .hero-scroll .arrow{display:block;text-align:center;margin-top:6px;animation:bob 2.5s ease-in-out infinite;}
+
+  /* Corner HUD — brighter */
+  .corner-hud{
+    position:absolute;z-index:10;font-family:'IBM Plex Mono',monospace;
+    font-size:8px;letter-spacing:1px;color:rgba(255,255,255,0.1);line-height:1.8;opacity:0;
+  }
+  .corner-hud.show{animation:rise 0.8s ease-out forwards;}
+  .corner-hud.tl{top:24px;left:24px;}
+  .corner-hud.tr{top:24px;right:24px;text-align:right;}
+  .corner-hud.br{bottom:24px;right:24px;text-align:right;}
+
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+  @keyframes bob{0%,100%{transform:translateY(0);opacity:0.5;}50%{transform:translateY(5px);opacity:1;}}
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<!-- SVG filter for analog interference -->
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <filter id="analogInterference" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence id="turbulence" type="turbulence" baseFrequency="0 0.4" numOctaves="3" seed="0" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- SIGNAL INTRO -->
+<div class="signal-intro" id="signalIntro">
+  <canvas id="noiseCanvas"></canvas>
+  <div class="signal-text" id="signalText"></div>
+</div>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-grid"></div>
+  <div class="binary-stream" id="binaryStream"></div>
+  <div class="hero-scanlines"></div>
+  <canvas class="hero-noise" id="heroNoise"></canvas>
+
+  <div class="corner-hud tl" id="hudTL">SYS.STATUS: ONLINE<br>SIGNAL: LOCKED<br>FREQ: 1420.405 MHz</div>
+  <div class="corner-hud tr" id="hudTR">NAV.COMPUTER v2.1<br>TIMESTAMP: <span id="timestamp"></span></div>
+  <div class="corner-hud br" id="hudBR">LAT: 55.7558°N<br>LON: 37.6173°E<br>BODY: SOL-III</div>
+
+  <div class="hero-catalog" id="heroCatalog">Field log · expedition 2026</div>
+  <div class="hero-name" id="heroName" data-text="Matvei Tkhai"></div>
+  <div class="hero-line" id="heroLine"></div>
+  <div class="hero-sub" id="heroSub">economist · builder</div>
+  <div class="hero-coords" id="heroCoords">55.7558° N · 37.6173° E · Sol III</div>
+  <div class="hero-scroll" id="heroScroll">scroll to explore<span class="arrow">↓</span></div>
+</div>
+
+<script>
+// Starfield
+const canvas=document.getElementById('stars'),ctx=canvas.getContext('2d');
+canvas.width=innerWidth;canvas.height=innerHeight;
+const bgStars=[];
+for(let i=0;i<300;i++) bgStars.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*1.2+0.2,a:Math.random()*0.3+0.05,s:Math.random()*0.003+0.001});
+function drawBg(){ctx.clearRect(0,0,canvas.width,canvas.height);const t=Date.now();bgStars.forEach(s=>{ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${s.a*(0.7+0.3*Math.sin(t*s.s))})`;ctx.fill();});requestAnimationFrame(drawBg);}
+drawBg();
+
+// Binary stream
+const bs=document.getElementById('binaryStream');
+for(let i=0;i<12;i++){
+  const col=document.createElement('div');col.className='binary-col';
+  col.style.left=(5+i*8.3)+'%';
+  col.style.animationDuration=(15+Math.random()*20)+'s';
+  col.style.animationDelay=(-Math.random()*20)+'s';
+  let txt='';for(let j=0;j<80;j++) txt+=Math.random()>0.5?'1':'0';
+  col.textContent=txt;bs.appendChild(col);
+}
+
+// Hero noise grain (1/4 res)
+const hnc=document.getElementById('heroNoise');
+hnc.width=Math.floor(innerWidth/4);hnc.height=Math.floor(innerHeight/4);
+const hnctx=hnc.getContext('2d');
+function drawHeroNoise(){
+  const img=hnctx.createImageData(hnc.width,hnc.height);const d=img.data;
+  for(let i=0;i<d.length;i+=4){const v=Math.random()*255;d[i]=d[i+1]=d[i+2]=v;d[i+3]=v>200?8:0;}
+  hnctx.putImageData(img,0,0);requestAnimationFrame(drawHeroNoise);
+}
+drawHeroNoise();
+
+// Timestamp
+function updateTS(){document.getElementById('timestamp').textContent=new Date().toISOString().replace('T',' ').slice(0,19)+' UTC';}
+updateTS();setInterval(updateTS,1000);
+
+// ===== SIGNAL INTRO =====
+const nc=document.getElementById('noiseCanvas');const nctx=nc.getContext('2d');
+nc.width=innerWidth;nc.height=innerHeight;
+const st=document.getElementById('signalText');
+const introLines=['SCANNING DEEP SPACE...','SIGNAL ACQUIRED · 1420.405 MHz','LINK ESTABLISHED'];
+let noiseIntensity=1,allTimers=[];
+
+function drawNoise(){
+  const img=nctx.createImageData(nc.width,nc.height);const d=img.data;
+  for(let y=0;y<nc.height;y+=3){for(let x=0;x<nc.width;x+=3){
+    const idx=(y*nc.width+x)*4,v=Math.random()*255*noiseIntensity*0.15,a=v>3?40*noiseIntensity:0;
+    for(let dy=0;dy<3&&y+dy<nc.height;dy++){for(let dx=0;dx<3&&x+dx<nc.width;dx++){
+      const i2=((y+dy)*nc.width+(x+dx))*4;d[i2]=d[i2+1]=d[i2+2]=v;d[i2+3]=a;
+    }}
+  }}
+  nctx.putImageData(img,0,0);
+  if(noiseIntensity>0.01)requestAnimationFrame(drawNoise);
+}
+drawNoise();
+
+function typeIntroLine(text,speed,cb){
+  st.textContent='';let i=0;
+  function step(){
+    if(i<text.length){st.textContent+=text[i];i++;
+      const t=setTimeout(step,speed);allTimers.push(t);
+    }else if(cb){const t=setTimeout(cb,200);allTimers.push(t);}
+  }
+  step();
+}
+
+function runIntro(){
+  let lineIdx=0;
+  function nextLine(){
+    if(lineIdx<introLines.length){
+      noiseIntensity=Math.max(0.03,1-lineIdx*0.35);
+      typeIntroLine(introLines[lineIdx],25,()=>{
+        lineIdx++;
+        if(lineIdx<introLines.length){const t=setTimeout(nextLine,120);allTimers.push(t);}
+        else{noiseIntensity=0;const t=setTimeout(()=>{
+          document.getElementById('signalIntro').classList.add('done');revealHero();
+        },300);allTimers.push(t);}
+      });
+    }
+  }
+  const t=setTimeout(nextLine,500);allTimers.push(t);
+}
+
+const nameEl=document.getElementById('heroName');
+
+// ===== HERO REVEAL =====
+function revealHero(){
+  document.getElementById('hero').classList.add('active');
+  nameEl.textContent='Matvei Tkhai';
+
+  const steps=[
+    ['heroCatalog',200],['heroName',350],['heroLine',800],
+    ['heroSub',950],['heroCoords',1100],
+    ['hudTL',500],['hudTR',600],['hudBR',750],['heroScroll',1500],
+  ];
+  steps.forEach(([id,delay])=>setTimeout(()=>document.getElementById(id).classList.add('show'),delay));
+  setTimeout(()=>nameEl.classList.add('resolved'),600);
+}
+
+runIntro();
+
+// Skip intro
+document.getElementById('signalIntro').addEventListener('click',()=>{
+  allTimers.forEach(t=>clearTimeout(t));noiseIntensity=0;
+  document.getElementById('signalIntro').classList.add('done');revealHero();
+});
+
+// Analog interference — slow drift of turbulence seed (~10fps)
+const turbEl=document.getElementById('turbulence');
+let seedVal=0;
+setInterval(()=>{seedVal++;turbEl.setAttribute('seed',seedVal);},100);
+
+window.addEventListener('resize',()=>{
+  canvas.width=innerWidth;canvas.height=innerHeight;
+  nc.width=innerWidth;nc.height=innerHeight;
+  hnc.width=Math.floor(innerWidth/4);hnc.height=Math.floor(innerHeight/4);
+});
+</script>
+</body>
+</html>

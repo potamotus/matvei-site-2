@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hero Screen Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior: smooth; }
+  body { background:#030508; color:#fff; font-family:'Saira',sans-serif; overflow-x:hidden; }
+  canvas#stars { position:fixed; inset:0; z-index:0; }
+
+  /* ===== HERO ===== */
+  .hero {
+    position:relative; z-index:10;
+    height:100vh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    text-align:center;
+  }
+
+  /* Subtle nebula glow behind name */
+  .hero::before {
+    content:''; position:absolute;
+    width:800px; height:400px; top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    background:radial-gradient(ellipse, rgba(60,50,160,0.06) 0%, rgba(40,70,180,0.025) 40%, transparent 70%);
+    pointer-events:none;
+  }
+
+  .hero-catalog {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; letter-spacing:3px; text-transform:uppercase;
+    color:rgba(255,255,255,0.08);
+    margin-bottom:20px;
+    opacity:0; transform:translateY(8px);
+    animation: fade-up 1s 0.3s ease-out forwards;
+  }
+
+  .hero-name {
+    font-size:clamp(36px, 6vw, 72px);
+    font-weight:600; letter-spacing:clamp(4px, 1.2vw, 14px);
+    text-transform:uppercase;
+    color:rgba(255,255,255,0.92);
+    text-shadow: 0 0 60px rgba(150,170,255,0.08), 0 0 120px rgba(100,130,255,0.04);
+    opacity:0; transform:translateY(10px);
+    animation: fade-up 1.2s 0.6s ease-out forwards;
+  }
+
+  .hero-line {
+    width:60px; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    margin:18px auto;
+    opacity:0;
+    animation: fade-up 0.8s 1s ease-out forwards;
+  }
+
+  .hero-sub {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:rgba(255,255,255,0.1);
+    line-height:1.8;
+    opacity:0; transform:translateY(6px);
+    animation: fade-up 1s 1.2s ease-out forwards;
+  }
+
+  .hero-coords {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px; letter-spacing:2px;
+    color:rgba(255,255,255,0.05);
+    margin-top:24px;
+    opacity:0;
+    animation: fade-up 0.8s 1.6s ease-out forwards;
+  }
+
+  .hero-scroll {
+    position:absolute; bottom:36px; left:50%; transform:translateX(-50%);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9px; letter-spacing:3px; text-transform:uppercase;
+    color:rgba(255,255,255,0.08);
+    opacity:0;
+    animation: fade-up 0.8s 2.2s ease-out forwards;
+  }
+  .hero-scroll .arrow {
+    display:block; text-align:center; margin-top:6px;
+    animation: bob 2.5s ease-in-out infinite;
+  }
+
+  @keyframes fade-up {
+    to { opacity:1; transform:translateY(0); }
+  }
+  @keyframes bob {
+    0%,100% { transform:translateY(0); opacity:0.5; }
+    50% { transform:translateY(5px); opacity:1; }
+  }
+
+  /* ===== CONTENT PLACEHOLDER (simulates nebula sections) ===== */
+  .content-space {
+    position:relative; z-index:10;
+    height:200vh;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .content-space-text {
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:rgba(255,255,255,0.06);
+  }
+
+  /* ===== CONTACTS — fixed corner, appear after hero ===== */
+  .contacts-corner {
+    position:fixed; bottom:24px; right:24px; z-index:50;
+    display:flex; gap:16px; align-items:center;
+    opacity:0; transform:translateY(8px);
+    transition: opacity 0.5s, transform 0.5s;
+    pointer-events:none;
+  }
+  .contacts-corner.visible {
+    opacity:1; transform:translateY(0);
+    pointer-events:auto;
+  }
+
+  .contact-link {
+    display:flex; align-items:center; gap:6px;
+    text-decoration:none;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    color:rgba(255,255,255,0.12);
+    transition: color 0.3s;
+  }
+  .contact-link:hover { color:rgba(255,255,255,0.45); }
+  .contact-link svg {
+    width:14px; height:14px;
+    fill:none; stroke:currentColor; stroke-width:1.5;
+    opacity:0.5; transition: opacity 0.3s;
+  }
+  .contact-link:hover svg { opacity:1; }
+
+  .contacts-sep {
+    width:1px; height:12px;
+    background:rgba(255,255,255,0.06);
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<!-- HERO -->
+<div class="hero" id="hero">
+  <div class="hero-catalog">Field log · expedition 2026</div>
+  <div class="hero-name">Matvei Tkhai</div>
+  <div class="hero-line"></div>
+  <div class="hero-sub">economist · builder</div>
+  <div class="hero-coords">55.7558° N · 37.6173° E · Sol III</div>
+  <div class="hero-scroll">
+    scroll to explore
+    <span class="arrow">↓</span>
+  </div>
+</div>
+
+<!-- Placeholder for nebula content -->
+<div class="content-space">
+  <div class="content-space-text">[ nebula sections here ]</div>
+</div>
+
+<!-- Fixed contacts — appear after scrolling past hero -->
+<div class="contacts-corner" id="contacts">
+  <a href="https://t.me/" class="contact-link" target="_blank">
+    <svg viewBox="0 0 24 24"><path d="M21 3L1 11l7.5 2.5M21 3l-4 18-8.5-7.5M21 3L8.5 13.5m0 0V20l3.5-3.5"/></svg>
+    TG
+  </a>
+  <div class="contacts-sep"></div>
+  <a href="https://github.com/potamotus" class="contact-link" target="_blank">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.09.66-.22.66-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.56-1.11-4.56-4.95 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.56 9.56 0 0112 6.8c.85 0 1.7.11 2.5.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.85-2.34 4.7-4.57 4.94.36.31.68.92.68 1.85v2.75c0 .27.16.58.67.48A10.01 10.01 0 0022 12c0-5.52-4.48-10-10-10z"/></svg>
+    GH
+  </a>
+</div>
+
+<script>
+// Starfield
+const canvas=document.getElementById('stars'),ctx=canvas.getContext('2d');
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}
+resize(); window.addEventListener('resize',resize);
+const stars=[];
+for(let i=0;i<300;i++) stars.push({
+  x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+  r:Math.random()*1.2+0.2, a:Math.random()*0.3+0.05, s:Math.random()*0.003+0.001
+});
+function drawStars(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const t=Date.now();
+  stars.forEach(s=>{
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${s.a*(0.7+0.3*Math.sin(t*s.s))})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+// Show contacts after scrolling past hero
+const contacts=document.getElementById('contacts');
+const hero=document.getElementById('hero');
+let contactsVisible=false;
+
+window.addEventListener('scroll',()=>{
+  const heroBottom=hero.getBoundingClientRect().bottom;
+  const shouldShow=heroBottom<window.innerHeight*0.3;
+  if(shouldShow&&!contactsVisible){
+    contacts.classList.add('visible');
+    contactsVisible=true;
+  } else if(!shouldShow&&contactsVisible){
+    contacts.classList.remove('visible');
+    contactsVisible=false;
+  }
+});
+</script>
+
+</body>
+</html>
